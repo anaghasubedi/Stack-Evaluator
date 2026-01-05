@@ -1,0 +1,14 @@
+# Stack Expression Evaluator - Dependencies
+# 
+# This project uses only Python standard library modules.
+# Tkinter comes built-in with Python, so no external 
+# dependencies are required for the main application.
+#
+# Python Version: 3.8+
+# 
+# To verify Tkinter is available, run:
+#   python -m tkinter
+# 
+# This should open a small test window.
+
+# No external dependencies needed! 
