@@ -1,10 +1,4 @@
-"""
-Stack Data Structure Implementation
-Author: Your Name
-Date: 2025-01-13
 
-A basic stack implementation with standard operations.
-"""
 
 class Stack:
     """

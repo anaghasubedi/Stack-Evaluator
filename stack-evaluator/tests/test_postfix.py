@@ -1,8 +1,3 @@
-"""
-Unit tests for Postfix Evaluator
-Author: Your Name
-Date: 2025-01-13
-"""
 
 import pytest
 from src.core.postfix_evaluator import PostfixEvaluator

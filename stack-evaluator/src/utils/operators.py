@@ -1,10 +1,3 @@
-"""
-Operator Utilities
-Author: Your Name
-Date: 2025-01-13
-
-Defines operator precedence, associativity, and operations.
-"""
 
 # Operator precedence (higher number = higher precedence)
 PRECEDENCE = {

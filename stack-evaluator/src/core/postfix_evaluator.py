@@ -1,10 +1,3 @@
-"""
-Postfix Expression Evaluator
-Author: Your Name
-Date: 2025-01-13
-
-Evaluates postfix (Reverse Polish Notation) expressions.
-"""
 
 from src.core.stack import Stack
 from src.utils.operators import is_operator, apply_operator, is_number

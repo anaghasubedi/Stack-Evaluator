@@ -1,10 +1,3 @@
-"""
-Expression Validator
-Author: Your Name
-Date: 2025-01-13
-
-Validates postfix and infix expressions.
-"""
 
 from src.utils.operators import is_operator, is_number
 

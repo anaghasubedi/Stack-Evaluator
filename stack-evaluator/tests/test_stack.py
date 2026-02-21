@@ -1,8 +1,3 @@
-"""
-Unit tests for Stack data structure
-Author: Your Name
-Date: 2025-01-13
-"""
 
 import pytest
 from src.core.stack import Stack
