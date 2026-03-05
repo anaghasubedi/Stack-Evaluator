@@ -57,24 +57,18 @@ class ExpressionValidator:
         if not expression or expression.strip() == "":
             return False, "Expression cannot be empty"
         
-        # Remove spaces for easier validation
-        expr = expression.replace(" ", "")
-        
-        if len(expr) == 0:
-            return False, "Expression cannot be empty"
-        
         # Check parentheses balance
         paren_count = 0
-        for char in expr:
+        for char in expression:
             if char == '(':
                 paren_count += 1
             elif char == ')':
                 paren_count -= 1
                 if paren_count < 0:
-                    return False, "Unbalanced parentheses: too many closing parentheses"
+                    return False, "Mismatched parentheses"
         
         if paren_count != 0:
-            return False, "Unbalanced parentheses: missing closing parentheses"
+            return False, "Mismatched parentheses"
         
         # Check for valid characters
         valid_chars = set('0123456789.+-*/^%() ')
@@ -82,36 +76,5 @@ class ExpressionValidator:
             if char not in valid_chars:
                 return False, f"Invalid character: '{char}'"
         
-        # Check for consecutive operators
-        tokens = expression.split()
-        prev_was_operator = False
-        prev_was_open_paren = False
-        
-        for i, token in enumerate(tokens):
-            # Skip parentheses for this check
-            if token == '(':
-                prev_was_open_paren = True
-                prev_was_operator = False
-                continue
-            elif token == ')':
-                prev_was_open_paren = False
-                prev_was_operator = False
-                continue
-            
-            if is_operator(token):
-                if prev_was_operator:
-                    return False, f"Consecutive operators found at position {i}"
-                if prev_was_open_paren:
-                    return False, f"Operator '{token}' cannot follow opening parenthesis"
-                prev_was_operator = True
-            elif is_number(token):
-                prev_was_operator = False
-                prev_was_open_paren = False
-            else:
-                return False, f"Invalid token: '{token}'"
-        
-        # Check if expression ends with an operator
-        if tokens and is_operator(tokens[-1]):
-            return False, "Expression cannot end with an operator"
-        
+        # Basic validation passed
         return True, "Valid expression"
