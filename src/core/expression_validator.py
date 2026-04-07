@@ -1,5 +1,5 @@
 
-from src.utils.operators import is_operator, is_number
+from utils.operators import is_operator, is_number
 
 
 class ExpressionValidator:

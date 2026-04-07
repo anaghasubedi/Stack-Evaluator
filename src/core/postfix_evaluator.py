@@ -1,7 +1,7 @@
 
-from src.core.stack import Stack
-from src.utils.operators import is_operator, apply_operator, is_number
-from src.core.expression_validator import ExpressionValidator
+from core.stack import Stack
+from utils.operators import is_operator, apply_operator, is_number
+from core.expression_validator import ExpressionValidator
 
 
 class PostfixEvaluator:

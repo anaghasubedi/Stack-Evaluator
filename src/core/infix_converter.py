@@ -1,11 +1,11 @@
-from src.core.stack import Stack
-from src.utils.operators import (
+from core.stack import Stack
+from utils.operators import (
     is_operator, 
     get_precedence, 
     get_associativity, 
     is_number
 )
-from src.core.expression_validator import ExpressionValidator
+from core.expression_validator import ExpressionValidator
 
 
 class InfixConverter:
