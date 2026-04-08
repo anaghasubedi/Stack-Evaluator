@@ -1,6 +1,8 @@
 """
-Stack Evaluator - Main Application
-Complete GUI with Infix & Postfix support and visualization
+Universal Expression Evaluator & Converter
+Supports: Prefix, Infix, Postfix
+Operations: Evaluate, Convert between notations
+With Step-by-Step Visualization
 
 Run: python src/main.py
 """
@@ -17,23 +19,25 @@ from core.postfix_evaluator import PostfixEvaluator
 from core.infix_converter import InfixConverter
 
 
-class StackEvaluatorApp:
-    """Main application window for Stack Evaluator"""
+class ExpressionEvaluator:
+    """Main application for expression evaluation and conversion"""
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Stack Expression Evaluator")
-        self.root.geometry("1000x800")
+        self.root.title("Expression Evaluator & Converter")
+        self.root.geometry("1100x850")
         self.root.configure(bg="#ecf0f1")
         
         # Application state
-        self.mode = tk.StringVar(value="postfix")
         self.stack = []
         self.output_queue = []
         self.steps = []
         self.current_step = 0
-        self.is_animating = False
-        self.animation_speed = 0.5
+        self.animation_speed = 0.8
+        
+        # Variables
+        self.input_type = tk.StringVar(value="infix")
+        self.operation = tk.StringVar(value="evaluate")
         
         self.setup_ui()
     
@@ -41,136 +45,190 @@ class StackEvaluatorApp:
         """Setup the complete user interface"""
         
         # ===== HEADER =====
-        header_frame = tk.Frame(self.root, bg="#34495e", height=80)
-        header_frame.pack(fill=tk.X, padx=0, pady=0)
+        header_frame = tk.Frame(self.root, bg="#2c3e50", height=90)
+        header_frame.pack(fill=tk.X)
         header_frame.pack_propagate(False)
         
         title = tk.Label(
             header_frame,
-            text="📚 Stack Expression Evaluator",
-            font=("Arial", 24, "bold"),
-            bg="#34495e",
+            text="🧮 Expression Evaluator & Converter",
+            font=("Arial", 26, "bold"),
+            bg="#2c3e50",
             fg="white"
         )
-        title.pack(pady=20)
+        title.pack(pady=25)
         
-        # ===== MODE SELECTION =====
-        mode_frame = tk.LabelFrame(
-            self.root,
-            text="Expression Type",
-            font=("Arial", 11, "bold"),
-            bg="#ecf0f1",
-            padx=20,
-            pady=15
-        )
-        mode_frame.pack(pady=15, padx=20, fill=tk.X)
+        # ===== MAIN CONTROL PANEL =====
+        control_panel = tk.Frame(self.root, bg="#ecf0f1")
+        control_panel.pack(pady=20, padx=30, fill=tk.X)
         
-        postfix_radio = tk.Radiobutton(
-            mode_frame,
-            text="📝 Postfix (RPN)",
-            variable=self.mode,
-            value="postfix",
-            font=("Arial", 11),
-            bg="#ecf0f1",
-            command=self.on_mode_change,
-            cursor="hand2"
-        )
-        postfix_radio.pack(side=tk.LEFT, padx=20)
+        # LEFT SIDE: Input Expression
+        left_panel = tk.Frame(control_panel, bg="#ecf0f1")
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        infix_radio = tk.Radiobutton(
-            mode_frame,
-            text="🔢 Infix (Standard)",
-            variable=self.mode,
-            value="infix",
-            font=("Arial", 11),
-            bg="#ecf0f1",
-            command=self.on_mode_change,
-            cursor="hand2"
-        )
-        infix_radio.pack(side=tk.LEFT, padx=20)
-        
-        # ===== INPUT SECTION =====
-        input_frame = tk.Frame(self.root, bg="#ecf0f1")
-        input_frame.pack(pady=10, padx=20, fill=tk.X)
-        
-        self.input_label = tk.Label(
-            input_frame,
-            text="Enter Postfix Expression:",
-            font=("Arial", 12, "bold"),
+        tk.Label(
+            left_panel,
+            text="📝 Enter Expression:",
+            font=("Arial", 13, "bold"),
             bg="#ecf0f1"
-        )
-        self.input_label.pack(anchor=tk.W, padx=5)
+        ).pack(anchor=tk.W, pady=(0, 5))
         
         self.expression_entry = tk.Entry(
-            input_frame,
-            font=("Arial", 14),
-            width=50,
+            left_panel,
+            font=("Arial", 16),
+            width=40,
             relief=tk.SOLID,
             bd=2
         )
-        self.expression_entry.pack(fill=tk.X, padx=5, pady=5)
-        self.expression_entry.insert(0, "5 3 + 2 *")
-        self.expression_entry.bind('<Return>', lambda e: self.evaluate())
+        self.expression_entry.pack(fill=tk.X, pady=5)
+        self.expression_entry.insert(0, "(5 + 3) * 2")
+        self.expression_entry.bind('<Return>', lambda e: self.execute())
         
-        # Example label
-        self.example_label = tk.Label(
-            input_frame,
-            text="Example: 5 3 + 2 *  (Result: 16)",
-            font=("Arial", 9, "italic"),
+        # Examples
+        examples_frame = tk.Frame(left_panel, bg="#ecf0f1")
+        examples_frame.pack(anchor=tk.W, pady=5)
+        
+        tk.Label(
+            examples_frame,
+            text="Examples:",
+            font=("Arial", 9, "bold"),
+            bg="#ecf0f1",
+            fg="#34495e"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        tk.Label(
+            examples_frame,
+            text="Infix: (3+5)*2",
+            font=("Arial", 9),
             bg="#ecf0f1",
             fg="#7f8c8d"
-        )
-        self.example_label.pack(anchor=tk.W, padx=5)
+        ).pack(side=tk.LEFT, padx=5)
         
-        # ===== CONTROL BUTTONS =====
+        tk.Label(
+            examples_frame,
+            text="Postfix: 3 5 + 2 *",
+            font=("Arial", 9),
+            bg="#ecf0f1",
+            fg="#7f8c8d"
+        ).pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(
+            examples_frame,
+            text="Prefix: * + 3 5 2",
+            font=("Arial", 9),
+            bg="#ecf0f1",
+            fg="#7f8c8d"
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # RIGHT SIDE: Configuration
+        right_panel = tk.LabelFrame(
+            control_panel,
+            text="⚙️ Configuration",
+            font=("Arial", 11, "bold"),
+            bg="#ffffff",
+            padx=20,
+            pady=15
+        )
+        right_panel.pack(side=tk.RIGHT, padx=(20, 0))
+        
+        # Input Type Selection
+        tk.Label(
+            right_panel,
+            text="Input Type:",
+            font=("Arial", 10, "bold"),
+            bg="#ffffff"
+        ).grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        
+        input_types = [
+            ("Infix (3 + 5)", "infix"),
+            ("Postfix (3 5 +)", "postfix"),
+            ("Prefix (+ 3 5)", "prefix")
+        ]
+        
+        for i, (text, value) in enumerate(input_types):
+            tk.Radiobutton(
+                right_panel,
+                text=text,
+                variable=self.input_type,
+                value=value,
+                font=("Arial", 9),
+                bg="#ffffff",
+                cursor="hand2"
+            ).grid(row=i+1, column=0, sticky=tk.W, padx=10)
+        
+        # Operation Selection
+        tk.Label(
+            right_panel,
+            text="Operation:",
+            font=("Arial", 10, "bold"),
+            bg="#ffffff"
+        ).grid(row=4, column=0, sticky=tk.W, pady=(15, 5))
+        
+        operations = [
+            ("Evaluate", "evaluate"),
+            ("Convert to Infix", "to_infix"),
+            ("Convert to Postfix", "to_postfix"),
+            ("Convert to Prefix", "to_prefix")
+        ]
+        
+        for i, (text, value) in enumerate(operations):
+            tk.Radiobutton(
+                right_panel,
+                text=text,
+                variable=self.operation,
+                value=value,
+                font=("Arial", 9),
+                bg="#ffffff",
+                cursor="hand2"
+            ).grid(row=i+5, column=0, sticky=tk.W, padx=10)
+        
+        # ===== ACTION BUTTONS =====
         button_frame = tk.Frame(self.root, bg="#ecf0f1")
         button_frame.pack(pady=15)
         
-        self.eval_btn = tk.Button(
+        tk.Button(
             button_frame,
-            text="▶ Evaluate",
-            command=self.evaluate,
-            font=("Arial", 12, "bold"),
+            text="▶ Execute",
+            command=self.execute,
+            font=("Arial", 13, "bold"),
             bg="#27ae60",
             fg="white",
-            padx=30,
-            pady=10,
+            padx=40,
+            pady=12,
             cursor="hand2",
             relief=tk.RAISED,
             bd=3
-        )
-        self.eval_btn.pack(side=tk.LEFT, padx=5)
+        ).pack(side=tk.LEFT, padx=8)
         
         self.step_btn = tk.Button(
             button_frame,
             text="⏭ Next Step",
             command=self.next_step,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 13, "bold"),
             bg="#3498db",
             fg="white",
-            padx=30,
-            pady=10,
+            padx=40,
+            pady=12,
             cursor="hand2",
             relief=tk.RAISED,
             bd=3,
             state=tk.DISABLED
         )
-        self.step_btn.pack(side=tk.LEFT, padx=5)
+        self.step_btn.pack(side=tk.LEFT, padx=8)
         
-        self.clear_btn = tk.Button(
+        tk.Button(
             button_frame,
-            text="🔄 Clear",
+            text="🔄 Clear All",
             command=self.clear_all,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 13, "bold"),
             bg="#e74c3c",
             fg="white",
-            padx=30,
-            pady=10,
+            padx=40,
+            pady=12,
             cursor="hand2",
             relief=tk.RAISED,
             bd=3
-        )
-        self.clear_btn.pack(side=tk.LEFT, padx=5)
+        ).pack(side=tk.LEFT, padx=8)
         
         # ===== SPEED CONTROL =====
         speed_frame = tk.Frame(self.root, bg="#ecf0f1")
@@ -183,23 +241,22 @@ class StackEvaluatorApp:
             bg="#ecf0f1"
         ).pack(side=tk.LEFT, padx=5)
         
-        self.speed_var = tk.DoubleVar(value=0.5)
-        speed_scale = tk.Scale(
+        self.speed_var = tk.DoubleVar(value=0.8)
+        tk.Scale(
             speed_frame,
-            from_=0.1,
+            from_=0.2,
             to=2.0,
             resolution=0.1,
             orient=tk.HORIZONTAL,
             variable=self.speed_var,
             length=250,
             bg="#ecf0f1",
-            command=self.update_speed
-        )
-        speed_scale.pack(side=tk.LEFT, padx=5)
+            command=lambda v: setattr(self, 'animation_speed', float(v))
+        ).pack(side=tk.LEFT, padx=5)
         
         tk.Label(
             speed_frame,
-            text="(slower ← → faster)",
+            text="Fast ← → Slow",
             font=("Arial", 8, "italic"),
             bg="#ecf0f1",
             fg="#7f8c8d"
@@ -207,13 +264,13 @@ class StackEvaluatorApp:
         
         # ===== VISUALIZATION AREA =====
         viz_container = tk.Frame(self.root, bg="#ecf0f1")
-        viz_container.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
+        viz_container.pack(pady=10, padx=30, fill=tk.BOTH, expand=True)
         
         # Left: Stack Visualization
         stack_frame = tk.LabelFrame(
             viz_container,
-            text="📦 Stack Visualization",
-            font=("Arial", 11, "bold"),
+            text="📚 Stack Visualization",
+            font=("Arial", 12, "bold"),
             bg="#ffffff",
             padx=15,
             pady=15
@@ -229,11 +286,11 @@ class StackEvaluatorApp:
         )
         self.stack_canvas.pack(fill=tk.BOTH, expand=True)
         
-        # Right: Output/Result
+        # Right: Output Visualization
         output_frame = tk.LabelFrame(
             viz_container,
-            text="📝 Output / Result",
-            font=("Arial", 11, "bold"),
+            text="📋 Output Queue",
+            font=("Arial", 12, "bold"),
             bg="#ffffff",
             padx=15,
             pady=15
@@ -249,200 +306,263 @@ class StackEvaluatorApp:
         )
         self.output_canvas.pack(fill=tk.BOTH, expand=True)
         
-        # ===== HISTORY/STEPS PANEL =====
-        history_frame = tk.LabelFrame(
+        # ===== STEP-BY-STEP LOG =====
+        log_frame = tk.LabelFrame(
             self.root,
-            text="📋 Evaluation Steps",
-            font=("Arial", 11, "bold"),
+            text="📝 Step-by-Step Process",
+            font=("Arial", 12, "bold"),
             bg="#ffffff",
             padx=10,
             pady=10
         )
-        history_frame.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
+        log_frame.pack(pady=10, padx=30, fill=tk.BOTH, expand=True)
         
         # Scrollbar
-        scroll = tk.Scrollbar(history_frame)
+        scroll = tk.Scrollbar(log_frame)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.history_text = tk.Text(
-            history_frame,
+        self.log_text = tk.Text(
+            log_frame,
             height=10,
-            font=("Courier", 10),
+            font=("Courier New", 10),
             bg="#fdfefe",
             state=tk.DISABLED,
             yscrollcommand=scroll.set,
             wrap=tk.WORD
         )
-        self.history_text.pack(fill=tk.BOTH, expand=True)
-        scroll.config(command=self.history_text.yview)
+        self.log_text.pack(fill=tk.BOTH, expand=True)
+        scroll.config(command=self.log_text.yview)
         
         # Configure text tags
-        self.history_text.tag_configure("step", foreground="#3498db", font=("Courier", 10, "bold"))
-        self.history_text.tag_configure("operation", foreground="#e67e22", font=("Courier", 10, "bold"))
-        self.history_text.tag_configure("result", foreground="#27ae60", font=("Courier", 10, "bold"))
-        self.history_text.tag_configure("error", foreground="#e74c3c", font=("Courier", 10, "bold"))
+        self.log_text.tag_configure("header", foreground="#2c3e50", font=("Courier New", 11, "bold"))
+        self.log_text.tag_configure("step", foreground="#3498db", font=("Courier New", 10, "bold"))
+        self.log_text.tag_configure("operation", foreground="#e67e22", font=("Courier New", 10))
+        self.log_text.tag_configure("result", foreground="#27ae60", font=("Courier New", 11, "bold"))
+        self.log_text.tag_configure("error", foreground="#e74c3c", font=("Courier New", 10, "bold"))
         
-        # ===== RESULT LABEL =====
+        # ===== RESULT DISPLAY =====
         self.result_label = tk.Label(
             self.root,
             text="",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             bg="#ecf0f1",
-            fg="#27ae60"
+            fg="#27ae60",
+            pady=10
         )
-        self.result_label.pack(pady=10)
+        self.result_label.pack()
         
-        # Draw initial empty state
+        # Initial draw
         self.draw_stack()
         self.draw_output()
     
-    def on_mode_change(self):
-        """Handle mode change between postfix and infix"""
-        mode = self.mode.get()
-        
-        if mode == "postfix":
-            self.input_label.config(text="Enter Postfix Expression:")
-            self.expression_entry.delete(0, tk.END)
-            self.expression_entry.insert(0, "5 3 + 2 *")
-            self.example_label.config(text="Example: 5 3 + 2 *  (Result: 16)")
-        else:  # infix
-            self.input_label.config(text="Enter Infix Expression:")
-            self.expression_entry.delete(0, tk.END)
-            self.expression_entry.insert(0, "(5 + 3) * 2")
-            self.example_label.config(text="Example: (5 + 3) * 2  (Result: 16)")
-        
-        self.clear_all()
-    
-    def update_speed(self, value):
-        """Update animation speed"""
-        self.animation_speed = float(value)
-    
-    def evaluate(self):
-        """Start evaluation process"""
+    def execute(self):
+        """Execute the selected operation"""
         expression = self.expression_entry.get().strip()
         
         if not expression:
-            messagebox.showwarning("Empty Expression", "Please enter an expression!")
+            messagebox.showwarning("Empty Input", "Please enter an expression!")
             return
         
-        # Clear previous results
         self.clear_all()
         
-        try:
-            mode = self.mode.get()
-            
-            if mode == "postfix":
-                self.evaluate_postfix(expression)
-            else:  # infix
-                self.evaluate_infix(expression)
-                
-        except Exception as e:
-            self.add_history(f"❌ Error: {str(e)}", "error")
-            messagebox.showerror("Evaluation Error", str(e))
-            self.result_label.config(text=f"❌ Error: {str(e)}", fg="#e74c3c")
-    
-    def evaluate_postfix(self, expression):
-        """Evaluate postfix expression with animation"""
-        evaluator = PostfixEvaluator()
+        input_type = self.input_type.get()
+        operation = self.operation.get()
         
         try:
-            # Get all steps
-            self.steps = list(evaluator.evaluate_step_by_step(expression))
+            if operation == "evaluate":
+                self.evaluate_expression(expression, input_type)
+            elif operation == "to_infix":
+                self.convert_to_infix(expression, input_type)
+            elif operation == "to_postfix":
+                self.convert_to_postfix(expression, input_type)
+            elif operation == "to_prefix":
+                self.convert_to_prefix(expression, input_type)
+        
+        except Exception as e:
+            self.add_log(f"\n❌ Error: {str(e)}\n", "error")
+            messagebox.showerror("Error", str(e))
+            self.result_label.config(text=f"❌ Error", fg="#e74c3c")
+    
+    def evaluate_expression(self, expression, input_type):
+        """Evaluate expression based on input type"""
+        self.add_log("="*60 + "\n", "header")
+        self.add_log(f"EVALUATING {input_type.upper()} EXPRESSION\n", "header")
+        self.add_log("="*60 + "\n\n", "header")
+        self.add_log(f"Input: {expression}\n", "operation")
+        self.add_log(f"Type: {input_type.upper()}\n\n", "operation")
+        
+        # Convert to postfix if needed
+        if input_type == "infix":
+            self.add_log("Step 1: Converting Infix to Postfix...\n", "step")
+            converter = InfixConverter()
+            postfix = converter.convert(expression)
+            self.add_log(f"Postfix: {postfix}\n\n", "operation")
+            expression = postfix
+        elif input_type == "prefix":
+            self.add_log("⚠️ Prefix evaluation not yet implemented\n", "error")
+            self.add_log("Converting Prefix to Postfix first...\n\n", "operation")
+            # TODO: Implement prefix to postfix conversion
+            messagebox.showinfo("Info", "Prefix evaluation coming soon! Please use Infix or Postfix.")
+            return
+        
+        # Evaluate postfix
+        self.add_log("Step 2: Evaluating Postfix Expression...\n\n", "step")
+        
+        evaluator = PostfixEvaluator()
+        self.steps = list(evaluator.evaluate_step_by_step(expression))
+        self.current_step = 0
+        
+        self.step_btn.config(state=tk.NORMAL)
+        self.animate_evaluation()
+    
+    def convert_to_postfix(self, expression, input_type):
+        """Convert expression to postfix"""
+        self.add_log("="*60 + "\n", "header")
+        self.add_log(f"CONVERTING TO POSTFIX\n", "header")
+        self.add_log("="*60 + "\n\n", "header")
+        self.add_log(f"Input: {expression}\n", "operation")
+        self.add_log(f"Type: {input_type.upper()}\n\n", "operation")
+        
+        if input_type == "postfix":
+            self.add_log("ℹ️ Expression is already in postfix notation!\n", "operation")
+            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
+            return
+        
+        if input_type == "infix":
+            converter = InfixConverter()
+            self.steps = list(converter.convert_step_by_step(expression))
             self.current_step = 0
             
-            # Enable step button
             self.step_btn.config(state=tk.NORMAL)
-            
-            # Start animation
-            self.animate_steps()
-            
-        except Exception as e:
-            raise e
-    
-    def evaluate_infix(self, expression):
-        """Convert infix to postfix and evaluate"""
-        converter = InfixConverter()
+            self.animate_conversion()
         
-        try:
-            # Convert to postfix
-            postfix = converter.convert(expression)
-            self.add_history(f"🔄 Converting: {expression}", "step")
-            self.add_history(f"📝 Postfix: {postfix}", "operation")
-            
-            # Show postfix in output canvas
-            self.output_queue = postfix.split()
-            self.draw_output()
-            
-            self.root.update()
-            time.sleep(self.animation_speed)
-            
-            # Now evaluate the postfix
-            self.add_history("\n--- Evaluating Postfix ---\n", "step")
-            self.evaluate_postfix(postfix)
-            
-        except Exception as e:
-            raise e
+        elif input_type == "prefix":
+            messagebox.showinfo("Info", "Prefix to Postfix conversion coming soon!")
     
-    def animate_steps(self):
-        """Animate through evaluation steps"""
+    def convert_to_infix(self, expression, input_type):
+        """Convert expression to infix"""
+        self.add_log("="*60 + "\n", "header")
+        self.add_log(f"CONVERTING TO INFIX\n", "header")
+        self.add_log("="*60 + "\n\n", "header")
+        
+        if input_type == "infix":
+            self.add_log("ℹ️ Expression is already in infix notation!\n", "operation")
+            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
+            return
+        
+        messagebox.showinfo("Info", "Postfix/Prefix to Infix conversion coming soon!")
+    
+    def convert_to_prefix(self, expression, input_type):
+        """Convert expression to prefix"""
+        self.add_log("="*60 + "\n", "header")
+        self.add_log(f"CONVERTING TO PREFIX\n", "header")
+        self.add_log("="*60 + "\n\n", "header")
+        
+        if input_type == "prefix":
+            self.add_log("ℹ️ Expression is already in prefix notation!\n", "operation")
+            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
+            return
+        
+        messagebox.showinfo("Info", "Infix/Postfix to Prefix conversion coming soon!")
+    
+    def animate_evaluation(self):
+        """Animate evaluation steps"""
+        if self.current_step < len(self.steps):
+            step = self.steps[self.current_step]
+            
+            # Update stack
+            if 'stack_after' in step:
+                self.stack = step['stack_after']
+                self.draw_stack()
+            
+            # Log step
+            self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+            
+            self.current_step += 1
+            self.root.after(int(self.animation_speed * 1000), self.animate_evaluation)
+        else:
+            # Complete
+            if self.steps and 'result' in self.steps[-1]:
+                result = self.steps[-1]['result']
+                self.add_log(f"\n{'='*60}\n", "header")
+                self.add_log(f"✅ FINAL RESULT: {result}\n", "result")
+                self.add_log(f"{'='*60}\n", "header")
+                self.result_label.config(text=f"✅ Result: {result}", fg="#27ae60")
+            self.step_btn.config(state=tk.DISABLED)
+    
+    def animate_conversion(self):
+        """Animate conversion steps"""
         if self.current_step < len(self.steps):
             step = self.steps[self.current_step]
             
             # Update visualizations
-            if 'stack_after' in step:
-                self.stack = step['stack_after']
+            if 'operator_stack_after' in step:
+                self.stack = step['operator_stack_after']
+                self.draw_stack()
             
-            self.draw_stack()
+            if 'output_queue_after' in step:
+                self.output_queue = step['output_queue_after']
+                self.draw_output()
             
-            # Add to history
-            self.add_history(f"Step {step['step_number']}: {step['description']}", "step")
+            # Log step
+            self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
             
             self.current_step += 1
-            
-            # Continue animation
-            self.root.after(int(self.animation_speed * 1000), self.animate_steps)
+            self.root.after(int(self.animation_speed * 1000), self.animate_conversion)
         else:
-            # Animation complete
-            if self.steps and 'result' in self.steps[-1]:
-                result = self.steps[-1]['result']
-                self.result_label.config(
-                    text=f"✅ Final Result: {result}",
-                    fg="#27ae60"
-                )
-                self.add_history(f"\n✅ Final Result: {result}", "result")
-            
+            # Complete
+            if self.steps and 'postfix' in self.steps[-1]:
+                result = self.steps[-1]['postfix']
+                self.add_log(f"\n{'='*60}\n", "header")
+                self.add_log(f"✅ POSTFIX RESULT: {result}\n", "result")
+                self.add_log(f"{'='*60}\n", "header")
+                self.result_label.config(text=f"✅ Postfix: {result}", fg="#27ae60")
             self.step_btn.config(state=tk.DISABLED)
     
     def next_step(self):
         """Execute next step manually"""
-        if self.current_step < len(self.steps):
-            step = self.steps[self.current_step]
-            
-            # Update visualizations
-            if 'stack_after' in step:
-                self.stack = step['stack_after']
-            
-            self.draw_stack()
-            
-            # Add to history
-            self.add_history(f"Step {step['step_number']}: {step['description']}", "step")
-            
-            self.current_step += 1
-            
-            # Check if done
-            if self.current_step >= len(self.steps):
-                if self.steps and 'result' in self.steps[-1]:
-                    result = self.steps[-1]['result']
-                    self.result_label.config(
-                        text=f"✅ Final Result: {result}",
-                        fg="#27ae60"
-                    )
-                    self.add_history(f"\n✅ Final Result: {result}", "result")
+        if self.operation.get() == "evaluate":
+            if self.current_step < len(self.steps):
+                step = self.steps[self.current_step]
                 
-                self.step_btn.config(state=tk.DISABLED)
+                if 'stack_after' in step:
+                    self.stack = step['stack_after']
+                    self.draw_stack()
+                
+                self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+                self.current_step += 1
+                
+                if self.current_step >= len(self.steps):
+                    if 'result' in self.steps[-1]:
+                        result = self.steps[-1]['result']
+                        self.add_log(f"\n✅ FINAL RESULT: {result}\n", "result")
+                        self.result_label.config(text=f"✅ Result: {result}", fg="#27ae60")
+                    self.step_btn.config(state=tk.DISABLED)
+        
+        else:  # Conversion
+            if self.current_step < len(self.steps):
+                step = self.steps[self.current_step]
+                
+                if 'operator_stack_after' in step:
+                    self.stack = step['operator_stack_after']
+                    self.draw_stack()
+                
+                if 'output_queue_after' in step:
+                    self.output_queue = step['output_queue_after']
+                    self.draw_output()
+                
+                self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+                self.current_step += 1
+                
+                if self.current_step >= len(self.steps):
+                    if 'postfix' in self.steps[-1]:
+                        result = self.steps[-1]['postfix']
+                        self.add_log(f"\n✅ POSTFIX RESULT: {result}\n", "result")
+                        self.result_label.config(text=f"✅ Postfix: {result}", fg="#27ae60")
+                    self.step_btn.config(state=tk.DISABLED)
     
     def draw_stack(self):
-        """Draw the stack visualization"""
+        """Draw stack visualization"""
         self.stack_canvas.delete("all")
         
         width = self.stack_canvas.winfo_width()
@@ -450,63 +570,54 @@ class StackEvaluatorApp:
         
         if not self.stack:
             self.stack_canvas.create_text(
-                width // 2,
-                height // 2,
-                text="Stack is Empty",
+                width // 2, height // 2,
+                text="Stack Empty",
                 font=("Arial", 14, "italic"),
                 fill="#95a5a6"
             )
             return
         
-        # Draw stack elements
-        box_width = 100
+        # Draw as vertical stack
+        box_width = 120
         box_height = 50
         spacing = 10
-        start_x = 50
-        
-        # Calculate starting y to center vertically
-        total_height = len(self.stack) * (box_height + spacing)
-        start_y = max(50, (height - total_height) // 2)
+        start_x = (width - box_width) // 2
         
         for i, value in enumerate(self.stack):
-            y = start_y + i * (box_height + spacing)
+            y = height - 50 - (i * (box_height + spacing))
             
-            # Highlight top element
+            # Color
             if i == len(self.stack) - 1:
-                fill_color = "#f39c12"  # Orange for top
+                color = "#f39c12"  # Top
             else:
-                fill_color = "#3498db"  # Blue for others
+                color = "#3498db"
             
-            # Draw box
+            # Box
             self.stack_canvas.create_rectangle(
                 start_x, y,
                 start_x + box_width, y + box_height,
-                fill=fill_color,
-                outline="#2c3e50",
-                width=2
+                fill=color, outline="#2c3e50", width=3
             )
             
-            # Draw value
+            # Value
             self.stack_canvas.create_text(
-                start_x + box_width // 2,
-                y + box_height // 2,
+                start_x + box_width // 2, y + box_height // 2,
                 text=str(value),
                 font=("Arial", 16, "bold"),
                 fill="white"
             )
             
-            # Draw index label
+            # Top label
             if i == len(self.stack) - 1:
                 self.stack_canvas.create_text(
-                    start_x + box_width + 20,
-                    y + box_height // 2,
+                    start_x + box_width + 30, y + box_height // 2,
                     text="← TOP",
-                    font=("Arial", 10, "bold"),
+                    font=("Arial", 11, "bold"),
                     fill="#f39c12"
                 )
     
     def draw_output(self):
-        """Draw the output queue/result"""
+        """Draw output queue"""
         self.output_canvas.delete("all")
         
         width = self.output_canvas.winfo_width()
@@ -514,51 +625,46 @@ class StackEvaluatorApp:
         
         if not self.output_queue:
             self.output_canvas.create_text(
-                width // 2,
-                height // 2,
-                text="Output Queue Empty",
+                width // 2, height // 2,
+                text="Output Empty",
                 font=("Arial", 14, "italic"),
                 fill="#95a5a6"
             )
             return
         
-        # Draw output queue elements
-        box_width = 80
+        # Draw horizontally
+        box_width = 70
         box_height = 50
         spacing = 10
-        start_x = 30
-        start_y = height // 2 - box_height // 2
+        total_width = len(self.output_queue) * (box_width + spacing)
+        start_x = max(20, (width - total_width) // 2)
+        start_y = (height - box_height) // 2
         
         for i, value in enumerate(self.output_queue):
             x = start_x + i * (box_width + spacing)
             
-            # Draw box
             self.output_canvas.create_rectangle(
                 x, start_y,
                 x + box_width, start_y + box_height,
-                fill="#9b59b6",
-                outline="#2c3e50",
-                width=2
+                fill="#9b59b6", outline="#2c3e50", width=3
             )
             
-            # Draw value
             self.output_canvas.create_text(
-                x + box_width // 2,
-                start_y + box_height // 2,
+                x + box_width // 2, start_y + box_height // 2,
                 text=str(value),
                 font=("Arial", 14, "bold"),
                 fill="white"
             )
     
-    def add_history(self, message, tag="normal"):
-        """Add message to history panel"""
-        self.history_text.config(state=tk.NORMAL)
-        self.history_text.insert(tk.END, message + "\n", tag)
-        self.history_text.see(tk.END)
-        self.history_text.config(state=tk.DISABLED)
+    def add_log(self, message, tag="normal"):
+        """Add message to log"""
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, message, tag)
+        self.log_text.see(tk.END)
+        self.log_text.config(state=tk.DISABLED)
     
     def clear_all(self):
-        """Clear all data and reset UI"""
+        """Clear everything"""
         self.stack = []
         self.output_queue = []
         self.steps = []
@@ -567,9 +673,9 @@ class StackEvaluatorApp:
         self.draw_stack()
         self.draw_output()
         
-        self.history_text.config(state=tk.NORMAL)
-        self.history_text.delete(1.0, tk.END)
-        self.history_text.config(state=tk.DISABLED)
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.delete(1.0, tk.END)
+        self.log_text.config(state=tk.DISABLED)
         
         self.result_label.config(text="")
         self.step_btn.config(state=tk.DISABLED)
@@ -578,7 +684,7 @@ class StackEvaluatorApp:
 def main():
     """Main entry point"""
     root = tk.Tk()
-    app = StackEvaluatorApp(root)
+    app = ExpressionEvaluator(root)
     root.mainloop()
 
 
