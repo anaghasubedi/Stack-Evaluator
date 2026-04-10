@@ -2,7 +2,7 @@ import pytest
 import sys
 sys.path.insert(0, 'src')
 
-from core.infix_converter import InfixConverter
+from src.core.infix_converter import InfixConverter
 
 
 def test_simple_addition():
