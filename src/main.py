@@ -230,8 +230,6 @@ class App(tk.Tk):
         self._speed_var  = tk.IntVar(value=65)    # 0–100 slider position
 
         self._build_ui()
-        self._set_examples()
-
     # ── UI Construction ───────────────────────────────────────────────────────
 
     def _build_ui(self):
@@ -623,14 +621,6 @@ class App(tk.Tk):
         self._log.insert(tk.END, text, tag)
         self._log.see(tk.END)
         self._log.config(state=tk.DISABLED)
-
-    # ── Example expressions ───────────────────────────────────────────────────
-
-    def _set_examples(self):
-        self._expression_var.set("( 3 + 5 ) * 2")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main():
     app = App()
