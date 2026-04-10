@@ -1,8 +1,6 @@
 """
-Universal Expression Evaluator & Converter
-Supports: Prefix, Infix, Postfix
-Operations: Evaluate, Convert between notations
-With Step-by-Step Visualization
+Expression Evaluator & Converter
+Clean, modern design with proper visualization
 
 Run: python src/main.py
 """
@@ -24,9 +22,9 @@ class ExpressionEvaluator:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Expression Evaluator & Converter")
-        self.root.geometry("1100x850")
-        self.root.configure(bg="#ecf0f1")
+        self.root.title("Expression Evaluator")
+        self.root.geometry("900x700")
+        self.root.configure(bg="#f5f5f5")
         
         # Application state
         self.stack = []
@@ -42,314 +40,118 @@ class ExpressionEvaluator:
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup the complete user interface"""
+        """Setup the user interface"""
         
-        # ===== HEADER =====
-        header_frame = tk.Frame(self.root, bg="#2c3e50", height=90)
-        header_frame.pack(fill=tk.X)
-        header_frame.pack_propagate(False)
+        # ===== HEADER (Smaller) =====
+        header = tk.Frame(self.root, bg="#2c3e50", height=50)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
         
-        title = tk.Label(
-            header_frame,
-            text="🧮 Expression Evaluator & Converter",
-            font=("Arial", 26, "bold"),
+        tk.Label(
+            header,
+            text="Expression Evaluator",
+            font=("Segoe UI", 16, "bold"),
             bg="#2c3e50",
             fg="white"
-        )
-        title.pack(pady=25)
+        ).pack(pady=12)
         
-        # ===== MAIN CONTROL PANEL =====
-        control_panel = tk.Frame(self.root, bg="#ecf0f1")
-        control_panel.pack(pady=20, padx=30, fill=tk.X)
+        # ===== INPUT SECTION =====
+        input_section = tk.Frame(self.root, bg="#f5f5f5")
+        input_section.pack(pady=15, padx=20, fill=tk.X)
         
-        # LEFT SIDE: Input Expression
-        left_panel = tk.Frame(control_panel, bg="#ecf0f1")
-        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
+        # Expression Entry
         tk.Label(
-            left_panel,
-            text="📝 Enter Expression:",
-            font=("Arial", 13, "bold"),
-            bg="#ecf0f1"
-        ).pack(anchor=tk.W, pady=(0, 5))
+            input_section,
+            text="Expression:",
+            font=("Segoe UI", 10),
+            bg="#f5f5f5"
+        ).pack(anchor=tk.W)
         
         self.expression_entry = tk.Entry(
-            left_panel,
-            font=("Arial", 16),
-            width=40,
-            relief=tk.SOLID,
-            bd=2
+            input_section,
+            font=("Consolas", 13),
+            width=50
         )
         self.expression_entry.pack(fill=tk.X, pady=5)
-        self.expression_entry.insert(0, "(5 + 3) * 2")
         self.expression_entry.bind('<Return>', lambda e: self.execute())
         
-        # Examples
-        examples_frame = tk.Frame(left_panel, bg="#ecf0f1")
-        examples_frame.pack(anchor=tk.W, pady=5)
+        # ===== CONTROLS (Compact) =====
+        controls = tk.Frame(self.root, bg="#f5f5f5")
+        controls.pack(pady=10, padx=20, fill=tk.X)
         
-        tk.Label(
-            examples_frame,
-            text="Examples:",
-            font=("Arial", 9, "bold"),
-            bg="#ecf0f1",
-            fg="#34495e"
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        # Left: Input Type
+        left = tk.LabelFrame(controls, text="Input Type", font=("Segoe UI", 9), bg="#f5f5f5")
+        left.pack(side=tk.LEFT, padx=(0, 10))
         
-        tk.Label(
-            examples_frame,
-            text="Infix: (3+5)*2",
-            font=("Arial", 9),
-            bg="#ecf0f1",
-            fg="#7f8c8d"
-        ).pack(side=tk.LEFT, padx=5)
+        for text, val in [("Infix", "infix"), ("Postfix", "postfix"), ("Prefix", "prefix")]:
+            tk.Radiobutton(left, text=text, variable=self.input_type, value=val,
+                          font=("Segoe UI", 9), bg="#f5f5f5").pack(anchor=tk.W, padx=10, pady=2)
         
-        tk.Label(
-            examples_frame,
-            text="Postfix: 3 5 + 2 *",
-            font=("Arial", 9),
-            bg="#ecf0f1",
-            fg="#7f8c8d"
-        ).pack(side=tk.LEFT, padx=5)
+        # Middle: Operation
+        middle = tk.LabelFrame(controls, text="Operation", font=("Segoe UI", 9), bg="#f5f5f5")
+        middle.pack(side=tk.LEFT, padx=10)
         
-        tk.Label(
-            examples_frame,
-            text="Prefix: * + 3 5 2",
-            font=("Arial", 9),
-            bg="#ecf0f1",
-            fg="#7f8c8d"
-        ).pack(side=tk.LEFT, padx=5)
+        for text, val in [("Evaluate", "evaluate"), ("To Infix", "to_infix"), 
+                         ("To Postfix", "to_postfix"), ("To Prefix", "to_prefix")]:
+            tk.Radiobutton(middle, text=text, variable=self.operation, value=val,
+                          font=("Segoe UI", 9), bg="#f5f5f5").pack(anchor=tk.W, padx=10, pady=2)
         
-        # RIGHT SIDE: Configuration
-        right_panel = tk.LabelFrame(
-            control_panel,
-            text="⚙️ Configuration",
-            font=("Arial", 11, "bold"),
-            bg="#ffffff",
-            padx=20,
-            pady=15
-        )
-        right_panel.pack(side=tk.RIGHT, padx=(20, 0))
+        # Right: Buttons
+        right = tk.Frame(controls, bg="#f5f5f5")
+        right.pack(side=tk.RIGHT)
         
-        # Input Type Selection
-        tk.Label(
-            right_panel,
-            text="Input Type:",
-            font=("Arial", 10, "bold"),
-            bg="#ffffff"
-        ).grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        tk.Button(right, text="Execute", command=self.execute,
+                 font=("Segoe UI", 10, "bold"), bg="#27ae60", fg="white",
+                 padx=20, pady=8, cursor="hand2").pack(pady=2)
         
-        input_types = [
-            ("Infix (3 + 5)", "infix"),
-            ("Postfix (3 5 +)", "postfix"),
-            ("Prefix (+ 3 5)", "prefix")
-        ]
+        self.step_btn = tk.Button(right, text="Next Step", command=self.next_step,
+                                  font=("Segoe UI", 10), bg="#3498db", fg="white",
+                                  padx=20, pady=8, cursor="hand2", state=tk.DISABLED)
+        self.step_btn.pack(pady=2)
         
-        for i, (text, value) in enumerate(input_types):
-            tk.Radiobutton(
-                right_panel,
-                text=text,
-                variable=self.input_type,
-                value=value,
-                font=("Arial", 9),
-                bg="#ffffff",
-                cursor="hand2"
-            ).grid(row=i+1, column=0, sticky=tk.W, padx=10)
+        tk.Button(right, text="Clear", command=self.clear_all,
+                 font=("Segoe UI", 10), bg="#e74c3c", fg="white",
+                 padx=20, pady=8, cursor="hand2").pack(pady=2)
         
-        # Operation Selection
-        tk.Label(
-            right_panel,
-            text="Operation:",
-            font=("Arial", 10, "bold"),
-            bg="#ffffff"
-        ).grid(row=4, column=0, sticky=tk.W, pady=(15, 5))
+        # ===== VISUALIZATION (Bigger) =====
+        viz = tk.Frame(self.root, bg="#f5f5f5")
+        viz.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
         
-        operations = [
-            ("Evaluate", "evaluate"),
-            ("Convert to Infix", "to_infix"),
-            ("Convert to Postfix", "to_postfix"),
-            ("Convert to Prefix", "to_prefix")
-        ]
+        # Stack
+        stack_frame = tk.LabelFrame(viz, text="Stack", font=("Segoe UI", 10, "bold"), bg="white")
+        stack_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         
-        for i, (text, value) in enumerate(operations):
-            tk.Radiobutton(
-                right_panel,
-                text=text,
-                variable=self.operation,
-                value=value,
-                font=("Arial", 9),
-                bg="#ffffff",
-                cursor="hand2"
-            ).grid(row=i+5, column=0, sticky=tk.W, padx=10)
+        self.stack_canvas = tk.Canvas(stack_frame, bg="white", highlightthickness=0)
+        self.stack_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # ===== ACTION BUTTONS =====
-        button_frame = tk.Frame(self.root, bg="#ecf0f1")
-        button_frame.pack(pady=15)
+        # Output Queue
+        output_frame = tk.LabelFrame(viz, text="Output Queue", font=("Segoe UI", 10, "bold"), bg="white")
+        output_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
-        tk.Button(
-            button_frame,
-            text="▶ Execute",
-            command=self.execute,
-            font=("Arial", 13, "bold"),
-            bg="#27ae60",
-            fg="white",
-            padx=40,
-            pady=12,
-            cursor="hand2",
-            relief=tk.RAISED,
-            bd=3
-        ).pack(side=tk.LEFT, padx=8)
+        self.output_canvas = tk.Canvas(output_frame, bg="white", highlightthickness=0)
+        self.output_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        self.step_btn = tk.Button(
-            button_frame,
-            text="⏭ Next Step",
-            command=self.next_step,
-            font=("Arial", 13, "bold"),
-            bg="#3498db",
-            fg="white",
-            padx=40,
-            pady=12,
-            cursor="hand2",
-            relief=tk.RAISED,
-            bd=3,
-            state=tk.DISABLED
-        )
-        self.step_btn.pack(side=tk.LEFT, padx=8)
+        # ===== LOG (Compact) =====
+        log_frame = tk.LabelFrame(self.root, text="Steps", font=("Segoe UI", 10, "bold"), bg="white")
+        log_frame.pack(pady=(10, 15), padx=20, fill=tk.BOTH)
         
-        tk.Button(
-            button_frame,
-            text="🔄 Clear All",
-            command=self.clear_all,
-            font=("Arial", 13, "bold"),
-            bg="#e74c3c",
-            fg="white",
-            padx=40,
-            pady=12,
-            cursor="hand2",
-            relief=tk.RAISED,
-            bd=3
-        ).pack(side=tk.LEFT, padx=8)
-        
-        # ===== SPEED CONTROL =====
-        speed_frame = tk.Frame(self.root, bg="#ecf0f1")
-        speed_frame.pack(pady=5)
-        
-        tk.Label(
-            speed_frame,
-            text="⚡ Animation Speed:",
-            font=("Arial", 10),
-            bg="#ecf0f1"
-        ).pack(side=tk.LEFT, padx=5)
-        
-        self.speed_var = tk.DoubleVar(value=0.8)
-        tk.Scale(
-            speed_frame,
-            from_=0.2,
-            to=2.0,
-            resolution=0.1,
-            orient=tk.HORIZONTAL,
-            variable=self.speed_var,
-            length=250,
-            bg="#ecf0f1",
-            command=lambda v: setattr(self, 'animation_speed', float(v))
-        ).pack(side=tk.LEFT, padx=5)
-        
-        tk.Label(
-            speed_frame,
-            text="Fast ← → Slow",
-            font=("Arial", 8, "italic"),
-            bg="#ecf0f1",
-            fg="#7f8c8d"
-        ).pack(side=tk.LEFT, padx=5)
-        
-        # ===== VISUALIZATION AREA =====
-        viz_container = tk.Frame(self.root, bg="#ecf0f1")
-        viz_container.pack(pady=10, padx=30, fill=tk.BOTH, expand=True)
-        
-        # Left: Stack Visualization
-        stack_frame = tk.LabelFrame(
-            viz_container,
-            text="📚 Stack Visualization",
-            font=("Arial", 12, "bold"),
-            bg="#ffffff",
-            padx=15,
-            pady=15
-        )
-        stack_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-        
-        self.stack_canvas = tk.Canvas(
-            stack_frame,
-            bg="#f8f9fa",
-            height=250,
-            highlightthickness=2,
-            highlightbackground="#bdc3c7"
-        )
-        self.stack_canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # Right: Output Visualization
-        output_frame = tk.LabelFrame(
-            viz_container,
-            text="📋 Output Queue",
-            font=("Arial", 12, "bold"),
-            bg="#ffffff",
-            padx=15,
-            pady=15
-        )
-        output_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        self.output_canvas = tk.Canvas(
-            output_frame,
-            bg="#f8f9fa",
-            height=250,
-            highlightthickness=2,
-            highlightbackground="#bdc3c7"
-        )
-        self.output_canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # ===== STEP-BY-STEP LOG =====
-        log_frame = tk.LabelFrame(
-            self.root,
-            text="📝 Step-by-Step Process",
-            font=("Arial", 12, "bold"),
-            bg="#ffffff",
-            padx=10,
-            pady=10
-        )
-        log_frame.pack(pady=10, padx=30, fill=tk.BOTH, expand=True)
-        
-        # Scrollbar
         scroll = tk.Scrollbar(log_frame)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.log_text = tk.Text(
-            log_frame,
-            height=10,
-            font=("Courier New", 10),
-            bg="#fdfefe",
-            state=tk.DISABLED,
-            yscrollcommand=scroll.set,
-            wrap=tk.WORD
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        self.log_text = tk.Text(log_frame, height=8, font=("Consolas", 9),
+                               bg="white", state=tk.DISABLED, yscrollcommand=scroll.set, wrap=tk.WORD)
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         scroll.config(command=self.log_text.yview)
         
-        # Configure text tags
-        self.log_text.tag_configure("header", foreground="#2c3e50", font=("Courier New", 11, "bold"))
-        self.log_text.tag_configure("step", foreground="#3498db", font=("Courier New", 10, "bold"))
-        self.log_text.tag_configure("operation", foreground="#e67e22", font=("Courier New", 10))
-        self.log_text.tag_configure("result", foreground="#27ae60", font=("Courier New", 11, "bold"))
-        self.log_text.tag_configure("error", foreground="#e74c3c", font=("Courier New", 10, "bold"))
+        # Tags
+        self.log_text.tag_configure("step", foreground="#3498db")
+        self.log_text.tag_configure("result", foreground="#27ae60", font=("Consolas", 9, "bold"))
+        self.log_text.tag_configure("error", foreground="#e74c3c", font=("Consolas", 9, "bold"))
         
-        # ===== RESULT DISPLAY =====
-        self.result_label = tk.Label(
-            self.root,
-            text="",
-            font=("Arial", 18, "bold"),
-            bg="#ecf0f1",
-            fg="#27ae60",
-            pady=10
-        )
-        self.result_label.pack()
+        # ===== RESULT =====
+        self.result_label = tk.Label(self.root, text="", font=("Segoe UI", 14, "bold"),
+                                     bg="#f5f5f5", fg="#27ae60")
+        self.result_label.pack(pady=(0, 10))
         
         # Initial draw
         self.draw_stack()
@@ -371,43 +173,30 @@ class ExpressionEvaluator:
         try:
             if operation == "evaluate":
                 self.evaluate_expression(expression, input_type)
-            elif operation == "to_infix":
-                self.convert_to_infix(expression, input_type)
             elif operation == "to_postfix":
                 self.convert_to_postfix(expression, input_type)
-            elif operation == "to_prefix":
-                self.convert_to_prefix(expression, input_type)
+            else:
+                messagebox.showinfo("Coming Soon", f"{operation} is not yet implemented!")
         
         except Exception as e:
-            self.add_log(f"\n❌ Error: {str(e)}\n", "error")
+            self.add_log(f"Error: {str(e)}\n", "error")
             messagebox.showerror("Error", str(e))
-            self.result_label.config(text=f"❌ Error", fg="#e74c3c")
     
     def evaluate_expression(self, expression, input_type):
-        """Evaluate expression based on input type"""
-        self.add_log("="*60 + "\n", "header")
-        self.add_log(f"EVALUATING {input_type.upper()} EXPRESSION\n", "header")
-        self.add_log("="*60 + "\n\n", "header")
-        self.add_log(f"Input: {expression}\n", "operation")
-        self.add_log(f"Type: {input_type.upper()}\n\n", "operation")
+        """Evaluate expression"""
+        self.add_log(f"Evaluating {input_type} expression: {expression}\n", "step")
         
         # Convert to postfix if needed
         if input_type == "infix":
-            self.add_log("Step 1: Converting Infix to Postfix...\n", "step")
             converter = InfixConverter()
             postfix = converter.convert(expression)
-            self.add_log(f"Postfix: {postfix}\n\n", "operation")
+            self.add_log(f"Converted to postfix: {postfix}\n", "step")
             expression = postfix
         elif input_type == "prefix":
-            self.add_log("⚠️ Prefix evaluation not yet implemented\n", "error")
-            self.add_log("Converting Prefix to Postfix first...\n\n", "operation")
-            # TODO: Implement prefix to postfix conversion
-            messagebox.showinfo("Info", "Prefix evaluation coming soon! Please use Infix or Postfix.")
+            messagebox.showinfo("Info", "Prefix evaluation not yet implemented!")
             return
         
-        # Evaluate postfix
-        self.add_log("Step 2: Evaluating Postfix Expression...\n\n", "step")
-        
+        # Evaluate
         evaluator = PostfixEvaluator()
         self.steps = list(evaluator.evaluate_step_by_step(expression))
         self.current_step = 0
@@ -416,16 +205,11 @@ class ExpressionEvaluator:
         self.animate_evaluation()
     
     def convert_to_postfix(self, expression, input_type):
-        """Convert expression to postfix"""
-        self.add_log("="*60 + "\n", "header")
-        self.add_log(f"CONVERTING TO POSTFIX\n", "header")
-        self.add_log("="*60 + "\n\n", "header")
-        self.add_log(f"Input: {expression}\n", "operation")
-        self.add_log(f"Type: {input_type.upper()}\n\n", "operation")
+        """Convert to postfix"""
+        self.add_log(f"Converting {input_type} to postfix: {expression}\n", "step")
         
         if input_type == "postfix":
-            self.add_log("ℹ️ Expression is already in postfix notation!\n", "operation")
-            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
+            self.add_log("Already in postfix notation!\n", "result")
             return
         
         if input_type == "infix":
@@ -435,67 +219,34 @@ class ExpressionEvaluator:
             
             self.step_btn.config(state=tk.NORMAL)
             self.animate_conversion()
-        
-        elif input_type == "prefix":
-            messagebox.showinfo("Info", "Prefix to Postfix conversion coming soon!")
-    
-    def convert_to_infix(self, expression, input_type):
-        """Convert expression to infix"""
-        self.add_log("="*60 + "\n", "header")
-        self.add_log(f"CONVERTING TO INFIX\n", "header")
-        self.add_log("="*60 + "\n\n", "header")
-        
-        if input_type == "infix":
-            self.add_log("ℹ️ Expression is already in infix notation!\n", "operation")
-            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
-            return
-        
-        messagebox.showinfo("Info", "Postfix/Prefix to Infix conversion coming soon!")
-    
-    def convert_to_prefix(self, expression, input_type):
-        """Convert expression to prefix"""
-        self.add_log("="*60 + "\n", "header")
-        self.add_log(f"CONVERTING TO PREFIX\n", "header")
-        self.add_log("="*60 + "\n\n", "header")
-        
-        if input_type == "prefix":
-            self.add_log("ℹ️ Expression is already in prefix notation!\n", "operation")
-            self.result_label.config(text=f"Result: {expression}", fg="#3498db")
-            return
-        
-        messagebox.showinfo("Info", "Infix/Postfix to Prefix conversion coming soon!")
+        else:
+            messagebox.showinfo("Info", "Prefix to Postfix not yet implemented!")
     
     def animate_evaluation(self):
-        """Animate evaluation steps"""
+        """Animate evaluation"""
         if self.current_step < len(self.steps):
             step = self.steps[self.current_step]
             
-            # Update stack
             if 'stack_after' in step:
                 self.stack = step['stack_after']
                 self.draw_stack()
             
-            # Log step
-            self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+            self.add_log(f"{step['description']}\n", "step")
             
             self.current_step += 1
             self.root.after(int(self.animation_speed * 1000), self.animate_evaluation)
         else:
-            # Complete
             if self.steps and 'result' in self.steps[-1]:
                 result = self.steps[-1]['result']
-                self.add_log(f"\n{'='*60}\n", "header")
-                self.add_log(f"✅ FINAL RESULT: {result}\n", "result")
-                self.add_log(f"{'='*60}\n", "header")
-                self.result_label.config(text=f"✅ Result: {result}", fg="#27ae60")
+                self.add_log(f"\nFinal Result: {result}\n", "result")
+                self.result_label.config(text=f"Result: {result}", fg="#27ae60")
             self.step_btn.config(state=tk.DISABLED)
     
     def animate_conversion(self):
-        """Animate conversion steps"""
+        """Animate conversion"""
         if self.current_step < len(self.steps):
             step = self.steps[self.current_step]
             
-            # Update visualizations
             if 'operator_stack_after' in step:
                 self.stack = step['operator_stack_after']
                 self.draw_stack()
@@ -504,19 +255,15 @@ class ExpressionEvaluator:
                 self.output_queue = step['output_queue_after']
                 self.draw_output()
             
-            # Log step
-            self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+            self.add_log(f"{step['description']}\n", "step")
             
             self.current_step += 1
             self.root.after(int(self.animation_speed * 1000), self.animate_conversion)
         else:
-            # Complete
             if self.steps and 'postfix' in self.steps[-1]:
                 result = self.steps[-1]['postfix']
-                self.add_log(f"\n{'='*60}\n", "header")
-                self.add_log(f"✅ POSTFIX RESULT: {result}\n", "result")
-                self.add_log(f"{'='*60}\n", "header")
-                self.result_label.config(text=f"✅ Postfix: {result}", fg="#27ae60")
+                self.add_log(f"\nPostfix Result: {result}\n", "result")
+                self.result_label.config(text=f"Postfix: {result}", fg="#27ae60")
             self.step_btn.config(state=tk.DISABLED)
     
     def next_step(self):
@@ -529,17 +276,16 @@ class ExpressionEvaluator:
                     self.stack = step['stack_after']
                     self.draw_stack()
                 
-                self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+                self.add_log(f"{step['description']}\n", "step")
                 self.current_step += 1
                 
                 if self.current_step >= len(self.steps):
                     if 'result' in self.steps[-1]:
                         result = self.steps[-1]['result']
-                        self.add_log(f"\n✅ FINAL RESULT: {result}\n", "result")
-                        self.result_label.config(text=f"✅ Result: {result}", fg="#27ae60")
+                        self.add_log(f"\nFinal Result: {result}\n", "result")
+                        self.result_label.config(text=f"Result: {result}", fg="#27ae60")
                     self.step_btn.config(state=tk.DISABLED)
-        
-        else:  # Conversion
+        else:
             if self.current_step < len(self.steps):
                 step = self.steps[self.current_step]
                 
@@ -551,113 +297,126 @@ class ExpressionEvaluator:
                     self.output_queue = step['output_queue_after']
                     self.draw_output()
                 
-                self.add_log(f"Step {step['step_number']}: {step['description']}\n", "step")
+                self.add_log(f"{step['description']}\n", "step")
                 self.current_step += 1
                 
                 if self.current_step >= len(self.steps):
                     if 'postfix' in self.steps[-1]:
                         result = self.steps[-1]['postfix']
-                        self.add_log(f"\n✅ POSTFIX RESULT: {result}\n", "result")
-                        self.result_label.config(text=f"✅ Postfix: {result}", fg="#27ae60")
+                        self.add_log(f"\nPostfix Result: {result}\n", "result")
+                        self.result_label.config(text=f"Postfix: {result}", fg="#27ae60")
                     self.step_btn.config(state=tk.DISABLED)
     
     def draw_stack(self):
-        """Draw stack visualization"""
+        """Draw stack visualization - vertical boxes from bottom to top"""
         self.stack_canvas.delete("all")
         
         width = self.stack_canvas.winfo_width()
         height = self.stack_canvas.winfo_height()
         
+        if width <= 1 or height <= 1:
+            return
+        
         if not self.stack:
             self.stack_canvas.create_text(
                 width // 2, height // 2,
-                text="Stack Empty",
-                font=("Arial", 14, "italic"),
+                text="Empty",
+                font=("Segoe UI", 12),
                 fill="#95a5a6"
             )
             return
         
-        # Draw as vertical stack
-        box_width = 120
-        box_height = 50
-        spacing = 10
-        start_x = (width - box_width) // 2
+        # Draw stack from bottom to top
+        box_width = min(150, width - 40)
+        box_height = 60
+        spacing = 5
         
-        for i, value in enumerate(self.stack):
-            y = height - 50 - (i * (box_height + spacing))
+        x = (width - box_width) // 2
+        
+        for i in range(len(self.stack)):
+            # Position from bottom up
+            y = height - 20 - ((i + 1) * (box_height + spacing))
             
-            # Color
+            if y < 0:
+                break
+            
+            value = self.stack[i]
+            
+            # Color - top element is different
             if i == len(self.stack) - 1:
-                color = "#f39c12"  # Top
+                color = "#f39c12"
             else:
                 color = "#3498db"
             
-            # Box
+            # Draw box
             self.stack_canvas.create_rectangle(
-                start_x, y,
-                start_x + box_width, y + box_height,
-                fill=color, outline="#2c3e50", width=3
+                x, y, x + box_width, y + box_height,
+                fill=color, outline="#2c3e50", width=2
             )
             
-            # Value
+            # Draw value
             self.stack_canvas.create_text(
-                start_x + box_width // 2, y + box_height // 2,
+                x + box_width // 2, y + box_height // 2,
                 text=str(value),
-                font=("Arial", 16, "bold"),
+                font=("Consolas", 16, "bold"),
                 fill="white"
             )
             
-            # Top label
+            # Label top
             if i == len(self.stack) - 1:
                 self.stack_canvas.create_text(
-                    start_x + box_width + 30, y + box_height // 2,
-                    text="← TOP",
-                    font=("Arial", 11, "bold"),
+                    x - 35, y + box_height // 2,
+                    text="TOP →",
+                    font=("Segoe UI", 9, "bold"),
                     fill="#f39c12"
                 )
     
     def draw_output(self):
-        """Draw output queue"""
+        """Draw output queue - horizontal boxes left to right"""
         self.output_canvas.delete("all")
         
         width = self.output_canvas.winfo_width()
         height = self.output_canvas.winfo_height()
         
+        if width <= 1 or height <= 1:
+            return
+        
         if not self.output_queue:
             self.output_canvas.create_text(
                 width // 2, height // 2,
-                text="Output Empty",
-                font=("Arial", 14, "italic"),
+                text="Empty",
+                font=("Segoe UI", 12),
                 fill="#95a5a6"
             )
             return
         
-        # Draw horizontally
-        box_width = 70
-        box_height = 50
+        # Draw queue horizontally
+        box_size = 60
         spacing = 10
-        total_width = len(self.output_queue) * (box_width + spacing)
-        start_x = max(20, (width - total_width) // 2)
-        start_y = (height - box_height) // 2
+        
+        total_width = len(self.output_queue) * (box_size + spacing)
+        start_x = max(10, (width - total_width) // 2)
+        y = (height - box_size) // 2
         
         for i, value in enumerate(self.output_queue):
-            x = start_x + i * (box_width + spacing)
+            x = start_x + i * (box_size + spacing)
             
+            # Draw box
             self.output_canvas.create_rectangle(
-                x, start_y,
-                x + box_width, start_y + box_height,
-                fill="#9b59b6", outline="#2c3e50", width=3
+                x, y, x + box_size, y + box_size,
+                fill="#9b59b6", outline="#2c3e50", width=2
             )
             
+            # Draw value
             self.output_canvas.create_text(
-                x + box_width // 2, start_y + box_height // 2,
+                x + box_size // 2, y + box_size // 2,
                 text=str(value),
-                font=("Arial", 14, "bold"),
+                font=("Consolas", 14, "bold"),
                 fill="white"
             )
     
     def add_log(self, message, tag="normal"):
-        """Add message to log"""
+        """Add to log"""
         self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, message, tag)
         self.log_text.see(tk.END)
@@ -682,7 +441,6 @@ class ExpressionEvaluator:
 
 
 def main():
-    """Main entry point"""
     root = tk.Tk()
     app = ExpressionEvaluator(root)
     root.mainloop()
